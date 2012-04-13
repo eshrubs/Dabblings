@@ -1,0 +1,12 @@
+Computes the first 7 digit palindromic prime in pi's digits.
+
+Inspired by http://www.scoopshot.com/hiring-developer/
+
+To Run
+------
+
+./palindromic_prime_of_pi 
+
+OR 
+
+python palindromic_prime_of_pi

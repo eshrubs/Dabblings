@@ -1,0 +1,87 @@
+#!/usr/bin/python
+
+"""
+Computes the first 7 digit palindromic prime found in consecutive digits of pi.
+
+Inspired by http://www.scoopshot.com/hiring-developer/
+"""
+
+from math import ceil, sqrt
+from collections import deque
+
+
+# Translated from Gibbon's streaming pi-digit generator
+# http://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/spigot.pdf
+def g():
+    q, r, t, k, n, l = 1, 0, 1, 1, 3, 3
+    while True:
+        if 4 * q + r - t < n * t:
+            yield n
+            q = 10 * q
+            r = 10 * (r - n * t)
+            t = t
+            k = k
+            n = (10 * (3 * q + r)) // t - 10 * n
+            l = l
+        else:
+            q = q * k
+            r = (2 * q + r) * l
+            t = t * l
+            k = k + 1
+            n = (q * (7 * k + 2) + r * l) // (t * l)
+            l = l + 2
+
+
+N = pow(10, 8)
+ROOT_N = int(ceil(sqrt(N)))
+
+# t contains all 7 digit palindomes
+t = [1000000 * a + 100000 * b + 10000 * c + 1000 * d + 100 * c + 10 * b + a
+    for a in range(1, 10)
+    for b in range(10)
+    for c in range(10)
+    for d in range(10)]
+
+# Iterate over all integers in [2, ROOT_N], and check divisors to get primality
+# Could use a better prime test, but the numbers are small here:
+#   Iterations = ROOT_N * len(t) = 10^4 * 9000 = 9*10^7
+for i in range(2, ROOT_N + 1):
+    for j in range(len(t) - 1, -1, -1):
+        if t[j] % i == 0:
+            t.pop(j)
+
+# Setup fast checks by using a string lookup
+pali_table = dict((str(n)[:4], n) for n in t)
+
+
+# Use deque for fast remove first char/add last
+s = deque()
+
+# Iterate over all digits of PI
+# First, build s to be 7 characters, then each iterations removes the first
+# digit and adds the next digit of pi to the end.
+#
+# Second see if s is a palindrome. The quickest way of doing this is check the
+# head and tail first, and then further into the deque. Also remember to skip
+# palindromes starting with zero, as that is not 7 digits
+#
+# Finally look up the first four characters in the dictionary to see if it is
+# there. If it is, you have found the first seven digit palindromic prime of pi
+for n, digit in enumerate(g()):
+    if n == 0:
+        continue  # Skip 3
+    s.append(digit)
+
+    if len(s) < 7:
+        continue
+
+    if len(s) > 7:
+        s.popleft()
+
+    if s[0] == s[6] and s[0] != 0 and s[1] == s[5] and s[2] == s[4]:
+        # We have a palindrome, now see if its prime
+        d = "".join(str(s[i]) for i in range(0, 4))
+        if d in pali_table:
+            print 'First 7 digit palidrome prime in pi is %d at index %d' % \
+                    (pali_table[d], n)
+            break
